@@ -1,0 +1,24 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Report {
+  id          Int          @id @default(autoincrement())
+  repoId      Int
+  data        Json
+  createdAt   DateTime      @default(now())
+  Repository  Repository?   @relation("RepoReports", fields: [repoId], references: [id])
+}
+
+model Repository {
+  id         Int       @id @default(autoincrement())
+  name       String
+  owner      String
+  reports    Report[]  @relation("RepoReports")
+}

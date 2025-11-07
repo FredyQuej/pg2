@@ -1,0 +1,50 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Repository {
+  id           Int          @id @default(autoincrement())
+  name         String
+  owner        String
+  createdAt    DateTime     @default(now())
+  events       Event[]
+  pullRequests PullRequest[]
+  reports      Report[]     @relation("RepoReports")
+}
+
+model Event {
+  id        Int       @id @default(autoincrement())
+  repoId    Int
+  type      String
+  data      Json
+  branch    String?
+  prNumber  Int?
+  createdAt DateTime  @default(now())
+  Repository Repository? @relation(fields: [repoId], references: [id])
+}
+
+model PullRequest {
+  id        Int       @id @default(autoincrement())
+  repoId    Int
+  number    Int
+  title     String
+  state     String
+  branch    String?
+  base      String?
+  createdAt DateTime   @default(now())
+  Repository Repository? @relation(fields: [repoId], references: [id])
+}
+
+model Report {
+  id          Int        @id @default(autoincrement())
+  repoId      Int
+  data        Json
+  createdAt   DateTime   @default(now())
+  Repository  Repository? @relation("RepoReports", fields: [repoId], references: [id])
+}
