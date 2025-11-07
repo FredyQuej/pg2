@@ -1,0 +1,162 @@
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: tesis_pg_v41
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tesisdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - tesis-net
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: pgadmin_v41
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: fquejq@miumg.edu.gt
+      PGADMIN_DEFAULT_PASSWORD: fr3dy
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - tesis-net
+
+  auth-service:
+    build: ./services/auth-service
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/tesisdb?schema=auth
+      JWT_SECRET: sistemasumgsecret
+      PORT: 4001
+      DEFAULT_ADMIN_EMAIL: fquejq@miumg.edu.gt
+      DEFAULT_ADMIN_PASSWORD: fr3dy
+      DEFAULT_ADMIN_NAME: fr3dyquej
+    ports:
+      - "4001:4001"
+    volumes:
+      - ./services/auth-service:/app
+      - ./services/auth-service/prisma:/app/prisma
+    networks:
+      - tesis-net
+
+  events-service:
+    build: ./services/events-service
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/tesisdb?schema=events
+      GITHUB_WEBHOOK_SECRET: sistemasumgsecret
+      PORT: 4002
+    ports:
+      - "4002:4002"
+    volumes:
+      - ./services/events-service:/app
+      - ./services/events-service/prisma:/app/prisma
+    networks:
+      - tesis-net
+
+  report-service:
+    build: ./services/report-service
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/tesisdb?schema=report
+      PORT: 4003
+    ports:
+      - "4003:4003"
+    volumes:
+      - ./services/report-service:/app
+      - ./services/report-service/prisma:/app/prisma
+    networks:
+      - tesis-net
+
+  provisioning-service:
+    build: ./services/provisioning-service
+    depends_on:
+      - events-service
+    environment:
+      PORT: 4010
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_WEBHOOK_SECRET: sistemasumgsecret
+      EVENTS_PUBLIC_URL: http://localhost:4002/webhooks/github
+    ports:
+      - "4010:4010"
+    networks:
+      - tesis-net
+
+
+  mcp-server:
+    build: ./services/mcp-server
+    container_name: mcp-server
+    depends_on:
+      - events-service
+      - report-service
+    environment:
+      MCP_SERVER_PORT: 4020
+      MCP_API_KEY: sistemasumgsecret
+      EVENTS_URL: http://events-service:4002
+      REPORT_URL: http://report-service:4003
+      LLM_PROVIDER: gemini
+      LLM_API_KEY: "AIzaSyDd7xlVlnTHWUVPO-Rl08mxkpYypvthqF8"
+      LLM_MODEL: gemini-2.5-flash    # ✅ CAMBIO CLAVE AQUÍ
+    ports:
+      - "4020:4020"
+    networks:
+      - tesis-net
+
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - auth-service
+      - events-service
+      - report-service
+      - mcp-server
+    environment:
+      VITE_API_AUTH: http://localhost:4001
+      VITE_API_EVENTS: http://localhost:4002
+      VITE_API_REPORT: http://localhost:4003
+      VITE_API_MCP: http://localhost:4020/rpc
+      VITE_MCP_API_KEY: sistemasumgsecret
+    ports:
+      - "5173:5173"
+    networks:
+      - tesis-net
+
+  nginx:
+    build: ./infra/nginx
+    depends_on:
+      - frontend
+      - auth-service
+      - events-service
+      - report-service
+      - provisioning-service
+      - mcp-server
+    environment:
+      MCP_API_KEY: sistemasumgsecret
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/conf.d:/etc/nginx/templates
+      - certs:/etc/letsencrypt:ro
+    networks:
+      - tesis-net
+
+volumes:
+  pgdata:
+  pgadmin_data:
+  certs:
+networks:
+  tesis-net:
+    driver: bridge
