@@ -108,7 +108,7 @@ services:
       REPORT_URL: http://report-service:4003
       LLM_PROVIDER: gemini
       LLM_API_KEY: "AIzaSyDd7xlVlnTHWUVPO-Rl08mxkpYypvthqF8"
-      LLM_MODEL: gemini-2.5-flash    # ✅ CAMBIO CLAVE AQUÍ
+      LLM_MODEL: gemini-2.5-flash    
     ports:
       - "4020:4020"
     networks:
@@ -152,6 +152,22 @@ services:
       - certs:/etc/letsencrypt:ro
     networks:
       - tesis-net
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok_tesis
+    depends_on:
+      - events-service
+    command:
+      - "http"
+      - "events-service:4002"
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    ports:
+      - "4040:4040"
+    networks:
+      - tesis-net
+
 
 volumes:
   pgdata:
