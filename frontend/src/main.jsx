@@ -80,8 +80,8 @@ function App(){
           <div className="brand">
             <div className="logo">WH</div>
             <div>
-              <h1>Webhook Monitor</h1>
-              <div className="subtitle">Proyecto de Graduación II — Monitor de webhooks</div>
+              <h1>Monitor GitHub</h1>
+              <div className="subtitle">Proyecto Desarrollo Web — Monitor de GitHub</div>
             </div>
           </div>
           <div className="header-actions">
@@ -114,7 +114,7 @@ function App(){
               {repos.map(r=> <option key={r.id} value={r.id}>{r.owner}/{r.name}</option>)}
             </select>
           </div>
-          <p className="hint">Eventos recibidos en tiempo real se mostrarán en el panel derecho 👉</p>
+          <p className="hint">Eventos recibidos en tiempo real se mostrarán en el panel derecho</p>
         </section>
       </div>
 

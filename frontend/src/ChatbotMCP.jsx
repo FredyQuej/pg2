@@ -73,7 +73,7 @@ export default function ChatbotMCP({ repoId }) {
       })
       const j = await r.json()
       if (j.error)
-        return setMessages(m => [...m, { role: 'assistant', text: `⚠️ Error: ${j.error.message}` }])
+        return setMessages(m => [...m, { role: 'assistant', text: `Error: ${j.error.message}` }])
 
       if (rpc.method === 'generateReport') {
         const { pdfBase64, filename } = j.result || {}
@@ -112,7 +112,7 @@ export default function ChatbotMCP({ repoId }) {
         setMessages(m => [...m, { role: 'assistant', text: j.result?.text || '(sin respuesta)' }])
       }
     } catch (e) {
-      setMessages(m => [...m, { role: 'assistant', text: `⚠️ Error de red: ${e.message}` }])
+      setMessages(m => [...m, { role: 'assistant', text: `Error de red: ${e.message}` }])
     }
   }
 
